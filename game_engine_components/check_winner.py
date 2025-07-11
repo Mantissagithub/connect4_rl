@@ -23,9 +23,9 @@ def check_winner(board):
             
     #diagonal cehcking like - 
     #2
+    # 2
     #  2
     #   2
-    #    2
     #i think you undestand by now
     for i in range(n):
         for j in range(m):

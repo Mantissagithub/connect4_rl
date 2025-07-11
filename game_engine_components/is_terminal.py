@@ -3,7 +3,7 @@ from check_winner import check_winner
 from is_draw import is_draw
 
 def is_the_end(board):
-    if check_winner(board)==1 or check_winner(board)==2:
+    if check_winner(board)!=0:
         return True
     else:
         #defining the draw condition

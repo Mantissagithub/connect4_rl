@@ -2,10 +2,10 @@
 
 Creating a self playing agent for Connect4 using RL, inspired from AlphaGo.
 
-## Component Architecture
+## Component Architecture 
 
-### 1. Game Engine Component
-- **initialize_board**: Set up empty 6x7 Connect 4 board - done
+### 1. Game Engine Component - done
+- **initialize_board**: Set up empty 6x7 Connect 4 board 
 - **get_valid_moves**: Return list of playable columns
 - **make_move**: Drop piece in specified column
 - **check_winner**: Detect win/loss/draw conditions
