@@ -52,4 +52,4 @@ class ValueHead(nn.Module):
         
         return x
 
-value_head = ValueHead()
+# value_head = ValueHead()

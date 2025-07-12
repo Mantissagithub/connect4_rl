@@ -13,29 +13,42 @@
 #     }
 
 from game_engine_components.make_move import make_move
-from mcts_components.evaluate_board import evaluate_board_position
-from mcts_components.create_node import create_node
+from .evaluate_board import evaluate_board_position
+from .create_node import create_node
 
 def expand_node(node, neural_net=None):
     if node['is_expanded']:
         return node
     
     node['is_expanded'] = True
-    node['is_terminal'] = False
     
-    for move in node['valid_moves']:
-        row, col = move
+    policy_probs, _ = evaluate_board_position(node['state'], node['current_player'], neural_net)
+    
+    if policy_probs is None:
+        policy_probs = [1.0/7] * 7
+    
+    for i, move in enumerate(node['valid_moves']):
+        col = move if isinstance(move, int) else move[1]
+        
         new_board = [row[:] for row in node['state']]
         
-        if make_move(new_board, row, col, node['current_player']):
+        if make_move(new_board, col, node['current_player']):
             child_node = create_node(
                 board=new_board,
                 parent=node,
-                action=move,
-                current_player=3 - node['current_player'], 
+                action=col,  
+                current_player=3 - node['current_player'],
                 neural_net=neural_net
             )
-            child_node['value'] = evaluate_board_position(new_board, child_node['current_player'], neural_net)
+            
+            if 0 <= col < len(policy_probs):
+                child_node['prior'] = policy_probs[col]
+            else:
+                child_node['prior'] = 0.1 
+            
+            _, child_value = evaluate_board_position(new_board, child_node['current_player'], neural_net)
+            child_node['value'] = child_value
+            
             node['children'].append(child_node)
     
     return node

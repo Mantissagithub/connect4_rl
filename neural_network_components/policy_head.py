@@ -45,4 +45,4 @@ class PolicyHead(nn.Module):
         
         return self.softmax(output)
 
-policy_head = PolicyHead()
+# policy_head = PolicyHead()

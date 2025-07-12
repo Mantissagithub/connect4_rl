@@ -24,9 +24,8 @@ import torch
 import torch.optim as optim
 import torch.nn as nn
 
-def update_weights(model, loss, optmizer=optim.Adam, learning_rate=0.01):
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-    optimizer.zero_grad()
-    loss.backward()
-    optimizer.step()
+def update_weights(model, loss, optimizer):
+    optimizer.zero_grad()  #clearing the previous computed gradients
+    loss.backward()  #fresh gradient calculation
+    optimizer.step()  #updating weights based on the loss gradients
     return model

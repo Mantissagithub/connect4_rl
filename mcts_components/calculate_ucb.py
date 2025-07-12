@@ -16,5 +16,19 @@
 
 from math import log, sqrt
     
-def calculate_ucb(node_value, parent_visits, child_visits, c_puct=1.4):
+# def calculate_ucb(node_value, parent_visits, child_visits, c_puct=1.4):
+#     return node_value + c_puct * sqrt(log(parent_visits + 1) / (child_visits + 1))
+
+#now implementing the ucb function as per the alphago paper, so the formula is:
+
+def calculate_ucb(q, p, n, n_a, c_puct=1.4):
+    if n_a == 0:
+        return float('inf')
+    
+    exploitation = q
+    exploration = c_puct * p * sqrt(n) / (1 + n_a)
+
+    return exploitation + exploration
+
+def calculate_ucb_fallback(node_value, parent_visits, child_visits, c_puct=1.4):
     return node_value + c_puct * sqrt(log(parent_visits + 1) / (child_visits + 1))

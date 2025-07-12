@@ -25,7 +25,7 @@ Creating a self playing agent for Connect4 using RL, inspired from AlphaGo.
 - **save_model**: Store trained weights to file
 - **load_model**: Restore weights from file
 
-### 3. MCTS Component
+### 3. MCTS Component - done
 - **create_node**: Initialize tree node with game state
 - **calculate_ucb_score**: Balance exploration vs exploitation
 - **select_child**: Choose best child node using UCB

@@ -47,4 +47,4 @@ class SharedFeatureExtraction(nn.Module):
         
         return x
 
-shared_feature_extraction = SharedFeatureExtraction()
+# shared_feature_extraction = SharedFeatureExtraction()

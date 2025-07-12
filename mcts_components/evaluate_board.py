@@ -2,22 +2,23 @@ from game_engine_components.check_winner import check_winner
 from game_engine_components.is_terminal import is_the_end
 from game_engine_components.is_draw import is_draw
 
-
 def evaluate_board_position(board, current_player, neural_net=None):
+    """Updated to return both policy and value"""
     if is_the_end(board):
         winner = check_winner(board)
-        
         if winner == current_player:
-            return 1.0  
-        elif winner != 0: 
-            return -1.0
-        else:  
-            return 0.0
+            return None, 1.0  
+        elif winner != 0:
+            return None, -1.0
+        else:
+            return None, 0.0
     
     if neural_net is not None:
-        return evaluate_with_neural_network(board, current_player, neural_net)
+        return evaluate_with_neural_network_full(board, current_player, neural_net)
     
-    return evaluate_with_heuristic(board, current_player)
+    uniform_policy = [1.0/7] * 7
+    heuristic_value = evaluate_with_heuristic(board, current_player)
+    return uniform_policy, heuristic_value
 
 
 def evaluate_with_neural_network(board, current_player, neural_net):
@@ -100,3 +101,29 @@ def evaluate_line(line, player):
 
 def get_initial_node_value(board, current_player, neural_net=None):
     return evaluate_board_position(board, current_player, neural_net)
+
+def evaluate_with_neural_network_full(board, current_player, neural_net):
+    try:
+        from game_engine_components.get_state_tensor import convert_into_tensor
+        from neural_network_components.forward_pass import forward_pass
+        
+        state_tensor = convert_into_tensor(board)
+        policy_logits, value = forward_pass(neural_net, state_tensor)
+        
+        import torch
+        policy_probs = torch.softmax(policy_logits, dim=-1)
+        
+        if hasattr(policy_probs, 'detach'):
+            policy_probs = policy_probs.detach().cpu().numpy()
+        if hasattr(value, 'detach'):
+            value = value.detach().cpu().item()
+        else:
+            value = float(value)
+        
+        return policy_probs.flatten(), value
+        
+    except Exception as e:
+        print(f"error evaluating with neural network: {e}")
+        uniform_policy = [1.0/7] * 7  
+        heuristic_value = evaluate_with_heuristic(board, current_player)
+        return uniform_policy, heuristic_value

@@ -1,4 +1,4 @@
-from get_valid_moves import get_valid_moves
+from .get_valid_moves import get_valid_moves
 
 def make_move(board, col, player):
     if col < 0 or col >= len(board[0]):

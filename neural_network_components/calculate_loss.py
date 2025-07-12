@@ -38,8 +38,8 @@ import torch.nn as nn
 #i fucked up the code, i mean the loss function, so i need to rewrite it
 
 def calculate_loss(predicted_p, target_p, predicted_v, target_v, policy_weight=1.0, value_weight=1.0):
-    kl_loss = nn.KLDivLoss(reduction='batchmean')
-    policy_loss = kl_loss(torch.log_softmax(predicted_p, dim=1), target_p)
+    # cross_entropy_loss = nn.CrossEntropyLoss()
+    policy_loss = -torch.sum(target_p * torch.log_softmax(predicted_p, dim=1))
 
     mse_loss = nn.MSELoss()
     value_loss = mse_loss(predicted_v, target_v)
