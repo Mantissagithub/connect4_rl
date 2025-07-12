@@ -29,22 +29,22 @@
 import torch
 import torch.nn as nn
 
-def shared_feature_extraction(empty_places, player1_places, player2_places):
-    empty_places_tensor = torch.tensor(empty_places, dtype=torch.float32).unsqueeze(0)
-    player1_places_tensor = torch.tensor(player1_places, dtype=torch.float32).unsqueeze(0)
-    player2_places_tensor = torch.tensor(player2_places, dtype=torch.float32).unsqueeze(0)
-    board_tensor = torch.cat((empty_places_tensor, player1_places_tensor, player2_places_tensor), dim=0).unsqueeze(0)
+class SharedFeatureExtraction(nn.Module):
+    def __init__(self):
+        super(SharedFeatureExtraction, self).__init__()
+        self.conv1 = nn.Conv2d(3, 32, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
+        self.relu = nn.ReLU()
+        
+    def forward(self, board_tensor):
+        x = self.conv1(board_tensor)
+        x = self.relu(x)  # obvious relu activations, maybe will migrate to gelu if needed, need to explore, as of now
+        x = self.conv2(x)
+        x = self.relu(x)
+        x = self.conv3(x)
+        x = self.relu(x)
+        
+        return x
 
-    #conv layers now to extract certain features
-    conv1 = nn.Conv2d(3, 32, kernel_size=3, padding=1)
-    conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
-    conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
-
-    x = conv1(board_tensor)
-    x = nn.ReLU()(x) #obvious relu activations, maybe will migrate to gelu if needed, need to explore, as of now
-    x = conv2(x)
-    x = nn.ReLU()(x)
-    x = conv3(x)
-    x = nn.ReLU()(x)
-
-    return x
+shared_feature_extraction = SharedFeatureExtraction()

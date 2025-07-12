@@ -29,21 +29,20 @@ import torch.nn as nn
 
 #the above thing is for my ref, don't mind!!
 
-def policy_head(shared_features):
-    #now reduce to 2 channels
-    reduction_layer = nn.Conv2d(128, 2, kernel_size=1)
+class PolicyHead(nn.Module):
+    def __init__(self):
+        super(PolicyHead, self).__init__()
+        self.reduction_layer = nn.Conv2d(128, 2, kernel_size=1)
+        self.dense_layer = nn.Linear(84, 7)
+        self.softmax = nn.Softmax(dim=1)
+    
+    def forward(self, shared_features):
+        reduced_x = self.reduction_layer(shared_features)
+        
+        flattened = reduced_x.view(reduced_x.size(0), -1)
+        
+        output = self.dense_layer(flattened)
+        
+        return self.softmax(output)
 
-    reduced_x = reduction_layer(shared_features)
-
-    #now flattening to 2x6x7 = 84 dimesnions
-    falttend = reduced_x.view(reduced_x.size(0), -1)
-
-    #now the dense layer
-    dense_layer = nn.Linear(84, 7)
-
-    output = dense_layer(falttend)
-
-    #now softmax
-    softmax = nn.Softmax(dim=1)
-
-    return softmax(output)
+policy_head = PolicyHead()

@@ -30,18 +30,26 @@
 import torch
 import torch.nn as nn
 
-def value_head(shared_features):
-    reduction_layer = nn.Conv2d(128, 1, kernel_size=1)
+class ValueHead(nn.Module):
+    def __init__(self):
+        super(ValueHead, self).__init__()
+        self.reduction_layer = nn.Conv2d(128, 1, kernel_size=1)
+        self.dense_layer1 = nn.Linear(42, 64)
+        self.dense_layer2 = nn.Linear(64, 1)
+        self.relu = nn.ReLU()
+        self.tanh = nn.Tanh()
+    
+    def forward(self, shared_features):
+        reduced_x = self.reduction_layer(shared_features)
+        
+        flattened = reduced_x.view(reduced_x.size(0), -1)
+        
+        x = self.dense_layer1(flattened)
+        x = self.relu(x)
+        
+        x = self.dense_layer2(x)
+        x = self.tanh(x)
+        
+        return x
 
-    reduced_x = reduction_layer(shared_features)
-
-    flattened = reduced_x.view(reduced_x.size(0), -1)
-    dense_layer1 = nn.Linear(42, 64)
-    dense_layer2 = nn.Linear(64, 1)
-
-    x = dense_layer1(flattened)
-    x = nn.ReLU(x)
-    x = dense_layer2(x)
-    x = nn.Tanh(x)
-
-    return x
+value_head = ValueHead()

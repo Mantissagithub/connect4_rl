@@ -24,7 +24,7 @@ import torch
 import torch.optim as optim
 import torch.nn as nn
 
-def update_wights(model, loss, optmizer=optim.Adam, learning_rate=0.01):
+def update_weights(model, loss, optmizer=optim.Adam, learning_rate=0.01):
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     optimizer.zero_grad()
     loss.backward()

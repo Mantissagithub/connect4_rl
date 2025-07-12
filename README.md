@@ -15,7 +15,7 @@ Creating a self playing agent for Connect4 using RL, inspired from AlphaGo.
 - **is_terminal**: Check if game has ended
 - **is_draw**: Check if game is a draw
 
-### 2. Neural Network Component
+### 2. Neural Network Component - done
 - **shared_feature_extraction**: Convolutional layers for spatial patterns
 - **policy_head**: Output action probabilities for each column
 - **value_head**: Output single value estimating position strength
