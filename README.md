@@ -2,9 +2,13 @@
 
 Creating a self-playing Connect4 agent using reinforcement learning, inspired by AlphaGo/AlphaZero algorithms. Built in 8 hours to understand how policy networks and value networks combine with Monte Carlo Tree Search for strategic gameplay.
 
+Main Inspiration:
+This project was deeply inspired by the groundbreaking [AlphaGo documentary (youtube)](https://youtu.be/WXuK6gekU1Y?si=ZPMd_DLDlVjDA63T) from 5 years ago, which showcased the historic match between Lee Sedol and DeepMind's AlphaGo in 2016. The documentary beautifully captures the moment when artificial intelligence achieved a milestone that many thought was decades away - mastering the ancient game of Go through pure self-play and neural networks.
+
 **Research Foundation:**
 - [Mastering Chess and Shogi by Self-Play with a General Reinforcement Learning Algorithm](https://arxiv.org/abs/1712.01815) - Original AlphaZero paper
 - [A general reinforcement learning algorithm that masters chess, shogi, and Go through self-play](https://www.science.org/doi/10.1126/science.aar6404) - Nature publication
+- 
 
 ## Architecture
 
