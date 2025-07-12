@@ -35,7 +35,7 @@ Creating a self playing agent for Connect4 using RL, inspired from AlphaGo.
 - **run_simulations**: Execute full MCTS search process
 - **get_action_visits**: Return visit counts for root children
 
-### 4. Training Data Component
+### 4. Training Data Component - done
 - **generate_self_play_game**: Play complete game using MCTS
 - **collect_training_examples**: Store state-policy-value tuples
 - **sample_action**: Choose move from MCTS policy distribution
@@ -55,3 +55,26 @@ Creating a self playing agent for Connect4 using RL, inspired from AlphaGo.
 - **set_playing_strength**: Adjust MCTS simulation count
 - **load_trained_model**: Initialize with pre-trained weights
 - **play_game**: Interface for human or agent opponents
+  
+## Final Results
+
+### Training Summary
+- **Status**: TRAINING COMPLETED ✅
+- **Total Training Time**: 0.57 hours
+- **Iterations Completed**: 500
+- **Best Rating Achieved**: 4.80
+- **Maximum Score Reached**: 12.08
+
+### Model Details
+- **Model Parameters**: 97,047
+- **Trainable Parameters**: 97,047
+- **Final Checkpoint**: `checkpoints/checkpoint_iter_0500_20250712_162910.pt`
+
+### Performance Metrics
+| Metric | Value |
+|--------|-------|
+| Training Duration | 0.57 hours |
+| Final Iteration | 500 |
+| Best Rating | 4.80 |
+| Peak Score | 12.08 |
+| Model Size | 97,047 parameters |

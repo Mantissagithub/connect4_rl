@@ -1,39 +1,44 @@
 from game_engine_components.check_winner import check_winner
 from game_engine_components.is_terminal import is_the_end
 from game_engine_components.is_draw import is_draw
+import torch
 
 def evaluate_board_position(board, current_player, neural_net=None):
-    """Updated to return both policy and value"""
     if is_the_end(board):
         winner = check_winner(board)
         if winner == current_player:
             return None, 1.0  
         elif winner != 0:
-            return None, -1.0
+            return None, -1.0  
         else:
-            return None, 0.0
+            return None, 0.0 
     
     if neural_net is not None:
-        return evaluate_with_neural_network_full(board, current_player, neural_net)
+        try:
+            policy_probs, value = neural_net.predict(board)
+            
+            if hasattr(policy_probs, 'tolist'):
+                policy_probs = policy_probs.tolist()
+            
+            if hasattr(value, 'item'):
+                value = value.item()
+            
+            return policy_probs, float(value)
+            
+        except Exception as e:
+            print(f"Neural network evaluation error: {e}")
+            pass
     
     uniform_policy = [1.0/7] * 7
     heuristic_value = evaluate_with_heuristic(board, current_player)
     return uniform_policy, heuristic_value
 
-
 def evaluate_with_neural_network(board, current_player, neural_net):
-    from neural_network_components.forward_pass import forward_pass
-    
     try:
-        from game_engine_components.get_state_tensor import convert_into_tensor
-        from neural_network_components.forward_pass import forward_pass
-        
-        state_tensor = convert_into_tensor(board)
-        
-        _, value = forward_pass(neural_net, state_tensor)
-        
+        policy_probs, value = neural_net.predict(board)
         return float(value)
-    except:
+    except Exception as e:
+        print(f"Neural network evaluation error: {e}")
         return evaluate_with_heuristic(board, current_player)
 
 
@@ -107,10 +112,8 @@ def evaluate_with_neural_network_full(board, current_player, neural_net):
         from game_engine_components.get_state_tensor import convert_into_tensor
         from neural_network_components.forward_pass import forward_pass
         
-        state_tensor = convert_into_tensor(board)
-        policy_logits, value = forward_pass(neural_net, state_tensor)
-        
-        import torch
+        # state_tensor = convert_into_tensor(board)
+        policy_logits, value = forward_pass(neural_net, board=board)
         policy_probs = torch.softmax(policy_logits, dim=-1)
         
         if hasattr(policy_probs, 'detach'):

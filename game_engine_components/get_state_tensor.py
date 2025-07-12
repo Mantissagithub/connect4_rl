@@ -1,5 +1,12 @@
 import torch
 
 def convert_into_tensor(board):
-    tenosr = torch.tensor(board, dtype=torch.float32)
-    return tenosr.unsqueeze(0)  #using unqueeze here to send it like with dimension knowledge of the board, not chosing unsqueeze(1) as it give it like (6, 1, 7), what the fuck can i do with this, and then unqueeze(2), gives it like (6, 7, 1), same shit!!
+    board_tensor = torch.tensor(board, dtype=torch.float32)
+    
+    empty_channel = (board_tensor == 0).float()
+    player1_channel = (board_tensor == 1).float()
+    player2_channel = (board_tensor == 2).float()
+    
+    input_tensor = torch.stack([empty_channel, player1_channel, player2_channel], dim=0)
+    
+    return input_tensor

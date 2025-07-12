@@ -36,7 +36,7 @@ def expand_node(node, neural_net=None):
             child_node = create_node(
                 board=new_board,
                 parent=node,
-                action=col,  
+                action=col,
                 current_player=3 - node['current_player'],
                 neural_net=neural_net
             )
@@ -44,10 +44,7 @@ def expand_node(node, neural_net=None):
             if 0 <= col < len(policy_probs):
                 child_node['prior'] = policy_probs[col]
             else:
-                child_node['prior'] = 0.1 
-            
-            _, child_value = evaluate_board_position(new_board, child_node['current_player'], neural_net)
-            child_node['value'] = child_value
+                child_node['prior'] = 0.1
             
             node['children'].append(child_node)
     

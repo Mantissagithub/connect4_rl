@@ -3,7 +3,7 @@ import torch.nn as nn
 from .shared_feature import SharedFeatureExtraction
 from .policy_head import PolicyHead
 from .value_head import ValueHead
-import numpy
+import numpy as np
 
 class NeuralNetwork(nn.Module):
     def __init__(self, input_channels=3, device=None):
@@ -43,18 +43,30 @@ class NeuralNetwork(nn.Module):
     def predict(self, board):
         self.eval()
         with torch.no_grad():
-            if not isinstance(board, torch.Tensor):
-                board_tensor = torch.tensor(board, dtype=torch.float32).to(self.device)
+            if isinstance(board, (list, np.ndarray)):
+                board_tensor = torch.tensor(board, dtype=torch.float32, device=self.device)
+            else:
+                # board_tensor = board.to(self.device)
+                board_tensor = board.float()
             
-            if board_tensor.dim() == 3:
-                board_tensor = board_tensor.unsqueeze(0)
-            
-            policy_output, value_output = self.forward(board_tensor)
+            if board_tensor.dim() == 2: #basucally if it only has 2d array like 6x7 values
+                empty_channel = (board_tensor == 0).float()
+                player1_channel = (board_tensor == 1).float()
+                player2_channel = (board_tensor == 2).float()
+
+                input_tensor = torch.stack([empty_channel, player1_channel, player2_channel], dim=0).unsqueeze(0)
+
+            else:
+                input_tensor = board_tensor.unsqueeze(0) if board_tensor.dim()==3 else board_tensor
+
+            input_tensor = input_tensor.to(self.device)
+
+            policy_output, value_output = self.forward(input_tensor)
 
             policy_probs = torch.softmax(policy_output, dim=1).cpu().numpy()[0]
             value = value_output.cpu().item()
 
-        return policy_probs, value
+            return policy_probs, value
     
     def get_device(self):
         return self.device
