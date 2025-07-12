@@ -1,76 +1,27 @@
 # Connect4 RL
 
-Creating a self playing agent for Connect4 using RL, inspired from AlphaGo.
+Creating a self-playing Connect4 agent using reinforcement learning, inspired by AlphaGo/AlphaZero algorithms. Built in 8 hours to understand how policy networks and value networks combine with Monte Carlo Tree Search for strategic gameplay.
 
-## Component Architecture 
+**Research Foundation:**
+- [Mastering Chess and Shogi by Self-Play with a General Reinforcement Learning Algorithm](https://arxiv.org/abs/1712.01815) - Original AlphaZero paper
+- [A general reinforcement learning algorithm that masters chess, shogi, and Go through self-play](https://www.science.org/doi/10.1126/science.aar6404) - Nature publication
 
-### 1. Game Engine Component - done
-- **initialize_board**: Set up empty 6x7 Connect 4 board 
-- **get_valid_moves**: Return list of playable columns
-- **make_move**: Drop piece in specified column
-- **check_winner**: Detect win/loss/draw conditions
-- **get_state_tensor**: Convert board to neural network input format
-- **copy_game**: Create deep copy of current game state
-- **reset_game**: Return to initial empty board
-- **is_terminal**: Check if game has ended
-- **is_draw**: Check if game is a draw
+## Architecture
 
-### 2. Neural Network Component - done
-- **shared_feature_extraction**: Convolutional layers for spatial patterns
-- **policy_head**: Output action probabilities for each column
-- **value_head**: Output single value estimating position strength
-- **forward_pass**: Complete network inference
-- **calculate_loss**: Compute policy and value losses
-- **update_weights**: Apply gradients to network parameters
-- **save_model**: Store trained weights to file
-- **load_model**: Restore weights from file
+1. **Game Engine** - Board management, move validation, win detection, state conversion
+2. **Neural Network** - Convolutional feature extraction with policy head (move probabilities) and value head (position evaluation)
+3. **MCTS** - Tree search using UCB scoring, expansion, neural network evaluation, and backpropagation
+4. **Training Data** - Self-play game generation, experience collection, replay buffer management
+5. **Training Loop** - Iterative data generation and network updates with checkpointing
 
-### 3. MCTS Component - done
-- **create_node**: Initialize tree node with game state
-- **calculate_ucb_score**: Balance exploration vs exploitation
-- **select_child**: Choose best child node using UCB
-- **expand_node**: Add children for all valid actions
-- **evaluate_position**: Use neural network to assess leaf nodes
-- **backpropagate_value**: Update statistics up the tree
-- **run_simulations**: Execute full MCTS search process
-- **get_action_visits**: Return visit counts for root children
+## Training Results
 
-### 4. Training Data Component - done
-- **generate_self_play_game**: Play complete game using MCTS
-- **collect_training_examples**: Store state-policy-value tuples
-- **sample_action**: Choose move from MCTS policy distribution
-- **assign_game_outcomes**: Fill in final results for all positions
-- **manage_replay_buffer**: Maintain fixed-size training data storage
-- **batch_sampling**: Randomly select training examples
+**Status:** COMPLETED ✅ in 0.57 hours (34 minutes)
 
-### 5. Training Loop Component
-- **training_iteration**: One complete cycle of data generation and learning
-- **network_training**: Update neural network on collected data
-- **save_checkpoint**: Store model at regular intervals
-- **evaluate_progress**: Test agent strength against baselines
-- **adjust_hyperparameters**: Modify learning rates and exploration
+**Iterations:** 500 | **Best Rating:** 4.80 | **Peak Score:** 12.08
 
-### 6. Agent Interface Component
-- **select_best_move**: Choose action for given position
-- **set_playing_strength**: Adjust MCTS simulation count
-- **load_trained_model**: Initialize with pre-trained weights
-- **play_game**: Interface for human or agent opponents
-  
-## Final Results
+**Model:** 97,047 parameters | **Checkpoint:** `checkpoint_iter_0500_20250712_162910.pt`
 
-### Training Summary
-- **Status**: TRAINING COMPLETED ✅
-- **Total Training Time**: 0.57 hours
-- **Iterations Completed**: 500
-- **Best Rating Achieved**: 4.80
-- **Maximum Score Reached**: 12.08
-
-### Model Details
-- **Model Parameters**: 97,047
-- **Trainable Parameters**: 97,047
-- **Final Checkpoint**: `checkpoints/checkpoint_iter_0500_20250712_162910.pt`
-
-### Performance Metrics
 | Metric | Value |
 |--------|-------|
 | Training Duration | 0.57 hours |
@@ -78,3 +29,18 @@ Creating a self playing agent for Connect4 using RL, inspired from AlphaGo.
 | Best Rating | 4.80 |
 | Peak Score | 12.08 |
 | Model Size | 97,047 parameters |
+
+## Hardware Specifications
+
+**Training Hardware:**
+- **GPU:** NVIDIA RTX 4060 (8GB VRAM)
+- **RAM:** 16GB
+- **Platform:** Laptop
+
+The RTX 4060's 8GB VRAM proved sufficient for training this Connect4 agent, handling the neural network computations and MCTS simulations efficiently. The 16GB system RAM provided adequate buffer space for training data management and self-play game generation.
+
+Fascinating to watch an AI learn strategic thinking from scratch through pure self-play - the agent progressed from random moves to genuine strategic understanding across 500 training iterations. The policy and value networks working together with MCTS created a beautiful feedback loop that gradually produced stronger gameplay.
+
+*This implementation captures core AlphaZero concepts with modest computational resources, proving the fundamental ideas work even without DeepMind's massive TPU clusters.*
+
+If time permits, will extend training with more iterations to push the score higher and see how far this agent can evolve its strategic understanding.
