@@ -20,18 +20,17 @@ This project was deeply inspired by the groundbreaking [AlphaGo documentary (you
 
 ## Training Results
 
-**Status:** COMPLETED ✅ in 0.57 hours (34 minutes)
+**Status:** COMPLETED ✅ in 16.80 hours (1008 minutes)
 
-**Iterations:** 500 | **Best Rating:** 4.80 | **Peak Score:** 12.08
+**Iterations:** 1000 | **Best Rating:** 14.00 
 
-**Model:** 97,047 parameters | **Checkpoint:** `checkpoint_iter_0500_20250712_162910.pt`
+**Model:** 97,047 parameters | **Checkpoint:** `checkpoints/checkpoint_iter_1000_20250713_192301.pt`
 
 | Metric | Value |
 |--------|-------|
-| Training Duration | 0.57 hours |
-| Final Iteration | 500 |
-| Best Rating | 4.80 |
-| Peak Score | 12.08 |
+| Training Duration |16.80 hours |
+| Final Iteration | 1000 |
+| Best Rating | 14.00 |
 | Model Size | 97,047 parameters |
 
 ## Hardware Specifications
