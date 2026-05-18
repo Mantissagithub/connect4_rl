@@ -86,8 +86,8 @@ class SelfPlayViewer:
         style = ttk.Style(self.root)
         try:
             style.theme_use("clam")
-        except tk.TclError:
-            pass
+        except tk.TclError as e:
+            print(f"[error]: exception: {e}")
 
         style.configure(
             "Dark.TButton",

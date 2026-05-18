@@ -169,7 +169,7 @@ def main():
             tui.log("Training iteration completed")
         except Exception as exc:
             iteration_metrics = {"error": str(exc)}
-            tui.log(f"Training iteration failed: {exc}")
+            tui.log(f"[error]: exception: {exc}")
 
         lr_scheduler.step()
         tui.log(f"Learning rate stepped to {optimizer.param_groups[0]['lr']:.6f}")
@@ -193,7 +193,7 @@ def main():
                 tui.update_iteration(iteration + 1, last_eval=current_rating, best_rating=best_rating)
             except Exception as exc:
                 iteration_metrics["evaluation_error"] = str(exc)
-                tui.log(f"Evaluation failed: {exc}")
+                tui.log(f"[error]: exception: {exc}")
 
         if (iteration + 1) % args.checkpoint_frequency == 0:
             tui.set_phase("checkpoint", f"iteration {iteration + 1}")
@@ -211,7 +211,7 @@ def main():
                     repo_path = hf_uploader.upload_checkpoint(checkpoint_path, final=False)
                     tui.log(f"Uploaded checkpoint to {hf_config.repo_id}:{repo_path}")
                 except Exception as exc:
-                    tui.log(f"HF upload failed: {exc}")
+                    tui.log(f"[error]: exception: {exc}")
 
         if (iteration + 1) % 10 == 0 and torch.cuda.is_available():
             torch.cuda.empty_cache()
@@ -253,7 +253,7 @@ def main():
             repo_path = hf_uploader.upload_checkpoint(final_checkpoint, final=True)
             tui.log(f"Uploaded final checkpoint to {hf_config.repo_id}:{repo_path}")
         except Exception as exc:
-            tui.log(f"Final HF upload failed: {exc}")
+            tui.log(f"[error]: exception: {exc}")
 
     tui.finish(
         f"Training completed in {total_training_time / 3600:.2f}h | "

@@ -95,7 +95,7 @@ def network_training(
         
         except Exception as e:
             if verbose:
-                print(f"Error during epoch {epoch + 1}: {e}")
+                print(f"[error]: exception: {e}")
             continue
         
         #summary of this epoch

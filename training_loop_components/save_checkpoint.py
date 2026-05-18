@@ -50,7 +50,7 @@ def save_checkpoint(
         return checkpoint_path
         
     except Exception as e:
-        _log(logger, f"Error saving checkpoint: {e}")
+        _log(logger, f"[error]: exception: {e}")
         return None
 
 def load_checkpoint(checkpoint_path, neural_net, optimizer=None, logger=None):
@@ -77,7 +77,7 @@ def load_checkpoint(checkpoint_path, neural_net, optimizer=None, logger=None):
         }
         
     except Exception as e:
-        _log(logger, f"Error loading checkpoint: {e}")
+        _log(logger, f"[error]: exception: {e}")
         return None
 
 def cleanup_old_checkpoints(checkpoint_dir, keep_latest=5, logger=None):
@@ -102,7 +102,7 @@ def cleanup_old_checkpoints(checkpoint_dir, keep_latest=5, logger=None):
             _log(logger, f"Removed old checkpoint: {filename}")
             
     except Exception as e:
-        _log(logger, f"Error cleaning up checkpoints: {e}")
+        _log(logger, f"[error]: exception: {e}")
 
 def get_latest_checkpoint(checkpoint_dir="checkpoints"):
     try:
@@ -120,7 +120,7 @@ def get_latest_checkpoint(checkpoint_dir="checkpoints"):
         return os.path.join(checkpoint_dir, checkpoint_files[0])
         
     except Exception as e:
-        print(f"Error finding latest checkpoint: {e}")
+        print(f"[error]: exception: {e}")
         return None
 
 def save_best_model(neural_net, metrics, best_models_dir="best_models", metric_name="final_loss", lower_is_better=True):
@@ -159,7 +159,7 @@ def save_best_model(neural_net, metrics, best_models_dir="best_models", metric_n
             return False
             
     except Exception as e:
-        print(f"Error saving best model: {e}")
+        print(f"[error]: exception: {e}")
         return False
 
 

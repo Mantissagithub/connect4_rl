@@ -63,7 +63,7 @@ def load_model(file_path='model.pth', device=None):
         return model, optimizer_state, epoch, loss_history, timestamp
         
     except Exception as e:
-        print(f"error loading model: {e}")
+        print(f"[error]: exception: {e}")
         return None, None, None, None, None
 
 def load_model_for_inference(file_path='model.pth', device=None):
@@ -89,7 +89,7 @@ def load_model_for_training(file_path='model.pth', optimizer_class=None, device=
                 optimizer.load_state_dict(optimizer_state)
                 print("Optimizer state restored")
             except Exception as e:
-                print(f"Warning: Could not restore optimizer state: {e}")
+                print(f"[error]: exception: {e}")
                 print("Using fresh optimizer")
     
     model.train()

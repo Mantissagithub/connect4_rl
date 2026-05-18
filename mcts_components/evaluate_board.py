@@ -18,7 +18,7 @@ def evaluate_board_position(board, current_player, neural_net=None):
                 policy_probs = policy_probs.tolist()
             return policy_probs, float(value)
         except Exception as e:
-            print(f"Neural network evaluation error: {e}")
+            print(f"[error]: exception: {e}")
     
     uniform_policy = [1.0 / 7] * 7
     heuristic_value = evaluate_with_heuristic(board, current_player)
@@ -29,7 +29,7 @@ def evaluate_with_neural_network(board, current_player, neural_net):
         _, value = neural_net.predict(board, current_player=current_player)
         return float(value)
     except Exception as e:
-        print(f"Neural network evaluation error: {e}")
+        print(f"[error]: exception: {e}")
         return evaluate_with_heuristic(board, current_player)
 
 

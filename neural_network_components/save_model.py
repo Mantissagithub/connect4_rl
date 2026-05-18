@@ -39,7 +39,7 @@ def save_model(model, optimizer, epoch, loss_history, file_path='model.pth'):
         print(f"Model saved to {file_path}")
         return True
     except Exception as e:
-        print(f"Error saving model: {e}")
+        print(f"[error]: exception: {e}")
         return False
     
 # torch.save(obj, f, pickle_module=pickle, pickle_protocol=2, _use_new_zipfile_serialization=True)[source][source]

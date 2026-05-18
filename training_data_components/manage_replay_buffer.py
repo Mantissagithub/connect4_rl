@@ -53,7 +53,7 @@ def save_replay_buffer(training_data: List[TrainExample], file_path: str):
             pickle.dump(training_data, f)
         print(f"Saved {len(training_data)} examples to {file_path}")
     except Exception as e:
-        print(f"Error saving replay buffer: {e}")
+        print(f"[error]: exception: {e}")
 
 def load_replay_buffer(file_path: str) -> List[TrainExample]:
     try:
@@ -65,7 +65,7 @@ def load_replay_buffer(file_path: str) -> List[TrainExample]:
         print(f"Replay buffer file not found: {file_path}")
         return []
     except Exception as e:
-        print(f"Error loading replay buffer: {e}")
+        print(f"[error]: exception: {e}")
         return []
 
 def load_replay_buffer_object(file_path: str, max_size: int = 50000) -> ReplayBuffer:
