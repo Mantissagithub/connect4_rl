@@ -22,5 +22,15 @@ dev = [
 [tool.setuptools]
 include-package-data = true
 
+[tool.setuptools.packages.find]
+include = [
+    "agent_interface_components",
+    "game_engine_components",
+    "mcts_components",
+    "neural_network_components",
+    "training_data_components",
+    "training_loop_components",
+]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
