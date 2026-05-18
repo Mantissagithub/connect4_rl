@@ -3,7 +3,15 @@ import os
 import time
 from typing import Dict, Any, Optional
 
-def save_checkpoint(neural_net, optimizer, iteration, metrics, checkpoint_dir="checkpoints", save_frequency=10):  
+def save_checkpoint(
+    neural_net,
+    optimizer,
+    iteration,
+    metrics,
+    checkpoint_dir="checkpoints",
+    save_frequency=10,
+    logger=None,
+):
     #just a small check to avoid saving too frequenly, just skipping the save if not needed
     if iteration % save_frequency != 0:
         return None
@@ -30,22 +38,22 @@ def save_checkpoint(neural_net, optimizer, iteration, metrics, checkpoint_dir="c
         }
 
         torch.save(checkpoint_data, checkpoint_path)
-        
-        print(f"Checkpoint saved: {checkpoint_path}")
-        print(f"  Iteration: {iteration}")
-        print(f"  Model parameters: {checkpoint_data['model_architecture']['parameters']:,}")
-        print(f"  Trainable parameters: {checkpoint_data['model_architecture']['trainable_parameters']:,}")
+
+        _log(logger, f"Checkpoint saved: {checkpoint_path}")
+        _log(logger, f"  Iteration: {iteration}")
+        _log(logger, f"  Model parameters: {checkpoint_data['model_architecture']['parameters']:,}")
+        _log(logger, f"  Trainable parameters: {checkpoint_data['model_architecture']['trainable_parameters']:,}")
         
         #keeping only the latest checkpoints to save disk space, already im running low on disk space 😁, so lets keep only 5 for now, for this emoji just go to this website and get thecpoy of the emote you want: https://emojicopy.com/
-        cleanup_old_checkpoints(checkpoint_dir, keep_latest=5)
+        cleanup_old_checkpoints(checkpoint_dir, keep_latest=5, logger=logger)
         
         return checkpoint_path
         
     except Exception as e:
-        print(f"Error saving checkpoint: {e}")
+        _log(logger, f"Error saving checkpoint: {e}")
         return None
 
-def load_checkpoint(checkpoint_path, neural_net, optimizer=None):
+def load_checkpoint(checkpoint_path, neural_net, optimizer=None, logger=None):
     try:
         if not os.path.exists(checkpoint_path):
             raise FileNotFoundError(f"Checkpoint not found: {checkpoint_path}")
@@ -57,9 +65,9 @@ def load_checkpoint(checkpoint_path, neural_net, optimizer=None):
         if optimizer is not None and 'optimizer_state_dict' in checkpoint_data:
             optimizer.load_state_dict(checkpoint_data['optimizer_state_dict'])
         
-        print(f"Checkpoint loaded: {checkpoint_path}")
-        print(f"Iteration: {checkpoint_data.get('iteration', 'Unknown')}")
-        print(f"Timestamp: {checkpoint_data.get('timestamp', 'Unknown')}")
+        _log(logger, f"Checkpoint loaded: {checkpoint_path}")
+        _log(logger, f"Iteration: {checkpoint_data.get('iteration', 'Unknown')}")
+        _log(logger, f"Timestamp: {checkpoint_data.get('timestamp', 'Unknown')}")
         
         return {
             'iteration': checkpoint_data.get('iteration', 0),
@@ -69,10 +77,10 @@ def load_checkpoint(checkpoint_path, neural_net, optimizer=None):
         }
         
     except Exception as e:
-        print(f"Error loading checkpoint: {e}")
+        _log(logger, f"Error loading checkpoint: {e}")
         return None
 
-def cleanup_old_checkpoints(checkpoint_dir, keep_latest=5):
+def cleanup_old_checkpoints(checkpoint_dir, keep_latest=5, logger=None):
     try:
         if not os.path.exists(checkpoint_dir):
             return
@@ -91,10 +99,10 @@ def cleanup_old_checkpoints(checkpoint_dir, keep_latest=5):
         for filename in files_to_remove:
             file_path = os.path.join(checkpoint_dir, filename)
             os.remove(file_path)
-            print(f"Removed old checkpoint: {filename}")
+            _log(logger, f"Removed old checkpoint: {filename}")
             
     except Exception as e:
-        print(f"Error cleaning up checkpoints: {e}")
+        _log(logger, f"Error cleaning up checkpoints: {e}")
 
 def get_latest_checkpoint(checkpoint_dir="checkpoints"):
     try:
@@ -153,3 +161,10 @@ def save_best_model(neural_net, metrics, best_models_dir="best_models", metric_n
     except Exception as e:
         print(f"Error saving best model: {e}")
         return False
+
+
+def _log(logger, message):
+    if logger is not None:
+        logger(message)
+    else:
+        print(message)

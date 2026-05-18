@@ -3,7 +3,15 @@ import torch.nn as nn
 from typing import Dict, Any
 import time
 
-def network_training(neural_net, optimizer, training_data, batch_size=32, num_epochs=10, verbose=True):
+def network_training(
+    neural_net,
+    optimizer,
+    training_data,
+    batch_size=32,
+    num_epochs=10,
+    verbose=True,
+    status_callback=None,
+):
     from training_data_components.batch_sampling import batch_sampling
     from neural_network_components.calculate_loss import calculate_loss
     
@@ -68,6 +76,19 @@ def network_training(neural_net, optimizer, training_data, batch_size=32, num_ep
                 total_value_loss += batch_value_loss
                 total_batches += 1
                 
+                if status_callback is not None:
+                    status_callback(
+                        "training_batch",
+                        {
+                            "epoch": epoch + 1,
+                            "num_epochs": num_epochs,
+                            "batch": batch_idx + 1,
+                            "loss": batch_loss,
+                            "policy_loss": batch_policy_loss,
+                            "value_loss": batch_value_loss,
+                        },
+                    )
+
                 if verbose and (batch_idx + 1) % 10 == 0:
                     print(f"  Epoch {epoch + 1}/{num_epochs}, Batch {batch_idx + 1}: "
                           f"Loss={batch_loss:.4f}, Policy={batch_policy_loss:.4f}, Value={batch_value_loss:.4f}")
@@ -83,6 +104,19 @@ def network_training(neural_net, optimizer, training_data, batch_size=32, num_ep
             avg_epoch_policy_loss = epoch_policy_loss / epoch_batches
             avg_epoch_value_loss = epoch_value_loss / epoch_batches
             epoch_time = time.time() - epoch_start_time
+
+            if status_callback is not None:
+                status_callback(
+                    "training_epoch",
+                    {
+                        "epoch": epoch + 1,
+                        "num_epochs": num_epochs,
+                        "loss": avg_epoch_loss,
+                        "policy_loss": avg_epoch_policy_loss,
+                        "value_loss": avg_epoch_value_loss,
+                        "epoch_time": epoch_time,
+                    },
+                )
             
             if verbose:
                 print(f"Epoch {epoch + 1}/{num_epochs} completed in {epoch_time:.2f}s: "

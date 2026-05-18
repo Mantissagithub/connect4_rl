@@ -12,6 +12,7 @@ def training_iteration(
     verbose=True,
     replay_buffer_path="training_data.pkl",
     replay_buffer_size=50000,
+    status_callback=None,
 ):
 
     iteration_start_time = time.time()
@@ -34,10 +35,22 @@ def training_iteration(
     for game_idx in range(nself_play):
         if verbose and (game_idx+1)%5==0:
             print(f"generated {game_idx+1}/{nself_play} self-play games")
+        if status_callback is not None:
+            status_callback("self_play_game_start", {"game": game_idx + 1, "total_games": nself_play})
 
         game_data = generate_self_play_game(neural_net=neural_net, num_simulations=num_simulations, verbose=verbose)
         replay_buffer = manage_replay_buffer(replay_buffer, game_data, max_size=replay_buffer_size)
         total_examples += len(game_data)
+        if status_callback is not None:
+            status_callback(
+                "self_play_game_done",
+                {
+                    "game": game_idx + 1,
+                    "total_games": nself_play,
+                    "examples": len(game_data),
+                    "replay_buffer_size": len(replay_buffer),
+                },
+            )
 
     save_replay_buffer(replay_buffer, replay_buffer_path)
     
@@ -53,7 +66,8 @@ def training_iteration(
         training_data=replay_buffer,
         batch_size=batch_size,
         num_epochs=num_epochs,
-        verbose=verbose
+        verbose=verbose,
+        status_callback=status_callback,
     )
     
     iteration_time = time.time() - iteration_start_time
