@@ -17,6 +17,7 @@ def network_training(
     
     neural_net.train()
     training_start_time = time.time()
+    device = neural_net.get_device()
     
     total_loss = 0.0
     total_policy_loss = 0.0
@@ -49,6 +50,10 @@ def network_training(
                     policies = torch.tensor(policies, dtype=torch.float32)
                 if not isinstance(values, torch.Tensor):
                     values = torch.tensor(values, dtype=torch.float32)
+
+                states = states.to(device)
+                policies = policies.to(device)
+                values = values.to(device)
                 
                 optimizer.zero_grad()
                 policy_pred, value_pred = neural_net(states)
@@ -94,9 +99,8 @@ def network_training(
                           f"Loss={batch_loss:.4f}, Policy={batch_policy_loss:.4f}, Value={batch_value_loss:.4f}")
         
         except Exception as e:
-            if verbose:
-                print(f"[error]: exception: {e}")
-            continue
+            print(f"[error]: exception: {e}")
+            raise
         
         #summary of this epoch
         if epoch_batches > 0:
