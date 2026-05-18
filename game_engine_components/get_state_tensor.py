@@ -1,12 +1,6 @@
-import torch
+from .connect4_env import Connect4Env
 
-def convert_into_tensor(board):
-    board_tensor = torch.tensor(board, dtype=torch.float32)
-    
-    empty_channel = (board_tensor == 0).float()
-    player1_channel = (board_tensor == 1).float()
-    player2_channel = (board_tensor == 2).float()
-    
-    input_tensor = torch.stack([empty_channel, player1_channel, player2_channel], dim=0)
-    
-    return input_tensor
+
+def convert_into_tensor(board, current_player=None):
+    env = Connect4Env.from_board(board, current_player=current_player)
+    return env.encode_state(current_player or env.current_player)

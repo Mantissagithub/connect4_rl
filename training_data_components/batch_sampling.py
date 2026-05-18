@@ -1,7 +1,7 @@
 import random
 import numpy as np
 import torch
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 from .training_types import TrainExample
 
@@ -102,24 +102,10 @@ def sample_stratified_batch(training_data: List[TrainExample],
     
     return sampled_batch
 
-def batch_sampling(batch_size=32):
-    """
-    Main batch sampling function that returns batches for training.
-    This function loads training data and returns batches.
-    """
-    try:
-        # Try to load existing training data
-        from .manage_replay_buffer import load_replay_buffer
-        training_data = load_replay_buffer("training_data.pkl")
-        
-        if not training_data or len(training_data) < batch_size:
-            # If not enough data, return empty list
-            return []
-        
-        # Create multiple batches from the available data
-        batches = create_training_batches(training_data, batch_size, num_batches=min(10, len(training_data) // batch_size))
-        return batches
-        
-    except Exception as e:
-        print(f"Error in batch_sampling: {e}")
+def batch_sampling(training_data: Optional[List[TrainExample]] = None, batch_size: int = 32, num_batches: Optional[int] = None):
+    if not training_data or len(training_data) < batch_size:
         return []
+
+    batch_count = num_batches if num_batches is not None else min(10, max(1, len(training_data) // batch_size))
+    raw_batches = create_training_batches(training_data, batch_size, num_batches=batch_count)
+    return [convert_batch_to_tensors(batch) for batch in raw_batches]

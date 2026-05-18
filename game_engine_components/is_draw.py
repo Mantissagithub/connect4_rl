@@ -1,6 +1,5 @@
+from .check_winner import check_winner
+
+
 def is_draw(board):
-    for r in range(len(board)):
-        for c in range(len(board[0])):
-            if board[r][c] == 0:
-                return False
-    return True
+    return check_winner(board) == 0 and all(board[0][col] != 0 for col in range(len(board[0])))

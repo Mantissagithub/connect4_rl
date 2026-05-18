@@ -1,7 +1,5 @@
-# here we are gonna just reached the terminal so just backpop the value
-
-def backpropagate_value(node, value):
-    while node is not None:
+def backpropagate_value(path, value):
+    for node in reversed(path):
         node['total_value'] += value
         node['visits'] += 1
-        node = node['parent']
+        value = -value

@@ -1,41 +1,32 @@
-from game_engine_components.check_winner import check_winner
-from game_engine_components.is_terminal import is_the_end
-from game_engine_components.is_draw import is_draw
-import torch
+from game_engine_components.connect4_env import Connect4Env
 
 def evaluate_board_position(board, current_player, neural_net=None):
-    if is_the_end(board):
-        winner = check_winner(board)
+    env = Connect4Env.from_board(board, current_player=current_player)
+
+    if env.is_terminal():
+        winner = env.winner()
         if winner == current_player:
-            return None, 1.0  
+            return None, 1.0
         elif winner != 0:
-            return None, -1.0  
-        else:
-            return None, 0.0 
-    
+            return None, -1.0
+        return None, 0.0
+
     if neural_net is not None:
         try:
-            policy_probs, value = neural_net.predict(board)
-            
-            if hasattr(policy_probs, 'tolist'):
+            policy_probs, value = neural_net.predict(board, current_player=current_player)
+            if hasattr(policy_probs, "tolist"):
                 policy_probs = policy_probs.tolist()
-            
-            if hasattr(value, 'item'):
-                value = value.item()
-            
             return policy_probs, float(value)
-            
         except Exception as e:
             print(f"Neural network evaluation error: {e}")
-            pass
     
-    uniform_policy = [1.0/7] * 7
+    uniform_policy = [1.0 / 7] * 7
     heuristic_value = evaluate_with_heuristic(board, current_player)
     return uniform_policy, heuristic_value
 
 def evaluate_with_neural_network(board, current_player, neural_net):
     try:
-        policy_probs, value = neural_net.predict(board)
+        _, value = neural_net.predict(board, current_player=current_player)
         return float(value)
     except Exception as e:
         print(f"Neural network evaluation error: {e}")
@@ -106,27 +97,3 @@ def evaluate_line(line, player):
 
 def get_initial_node_value(board, current_player, neural_net=None):
     return evaluate_board_position(board, current_player, neural_net)
-
-def evaluate_with_neural_network_full(board, current_player, neural_net):
-    try:
-        from game_engine_components.get_state_tensor import convert_into_tensor
-        from neural_network_components.forward_pass import forward_pass
-        
-        # state_tensor = convert_into_tensor(board)
-        policy_logits, value = forward_pass(neural_net, board=board)
-        policy_probs = torch.softmax(policy_logits, dim=-1)
-        
-        if hasattr(policy_probs, 'detach'):
-            policy_probs = policy_probs.detach().cpu().numpy()
-        if hasattr(value, 'detach'):
-            value = value.detach().cpu().item()
-        else:
-            value = float(value)
-        
-        return policy_probs.flatten(), value
-        
-    except Exception as e:
-        print(f"error evaluating with neural network: {e}")
-        uniform_policy = [1.0/7] * 7  
-        heuristic_value = evaluate_with_heuristic(board, current_player)
-        return uniform_policy, heuristic_value

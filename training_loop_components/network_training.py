@@ -3,7 +3,7 @@ import torch.nn as nn
 from typing import Dict, Any
 import time
 
-def network_training(neural_net, optimizer, batch_size=32, num_epochs=10, verbose=True):
+def network_training(neural_net, optimizer, training_data, batch_size=32, num_epochs=10, verbose=True):
     from training_data_components.batch_sampling import batch_sampling
     from neural_network_components.calculate_loss import calculate_loss
     
@@ -25,7 +25,7 @@ def network_training(neural_net, optimizer, batch_size=32, num_epochs=10, verbos
         epoch_batches = 0
         
         try:
-            batches = batch_sampling(batch_size=batch_size)
+            batches = batch_sampling(training_data=training_data, batch_size=batch_size)
             
             if not batches:
                 if verbose:

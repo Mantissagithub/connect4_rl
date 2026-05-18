@@ -34,15 +34,12 @@ class PolicyHead(nn.Module):
         super(PolicyHead, self).__init__()
         self.reduction_layer = nn.Conv2d(128, 2, kernel_size=1)
         self.dense_layer = nn.Linear(84, 7)
-        self.softmax = nn.Softmax(dim=1)
     
     def forward(self, shared_features):
         reduced_x = self.reduction_layer(shared_features)
         
         flattened = reduced_x.view(reduced_x.size(0), -1)
         
-        output = self.dense_layer(flattened)
-        
-        return self.softmax(output)
+        return self.dense_layer(flattened)
 
 # policy_head = PolicyHead()

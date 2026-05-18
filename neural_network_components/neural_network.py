@@ -40,30 +40,31 @@ class NeuralNetwork(nn.Module):
 
         return policy_output, value_output
 
-    def predict(self, board):
+    def _encode_board_for_player(self, board_tensor, current_player):
+        other_player = 3 - current_player
+        current_channel = (board_tensor == current_player).float()
+        opponent_channel = (board_tensor == other_player).float()
+        empty_channel = (board_tensor == 0).float()
+        return torch.stack([current_channel, opponent_channel, empty_channel], dim=0).unsqueeze(0)
+
+    def predict(self, board, current_player=1):
         self.eval()
         with torch.no_grad():
             if isinstance(board, (list, np.ndarray)):
                 board_tensor = torch.tensor(board, dtype=torch.float32, device=self.device)
             else:
-                # board_tensor = board.to(self.device)
-                board_tensor = board.float()
+                board_tensor = board.float().to(self.device)
             
-            if board_tensor.dim() == 2: #basucally if it only has 2d array like 6x7 values
-                empty_channel = (board_tensor == 0).float()
-                player1_channel = (board_tensor == 1).float()
-                player2_channel = (board_tensor == 2).float()
-
-                input_tensor = torch.stack([empty_channel, player1_channel, player2_channel], dim=0).unsqueeze(0)
-
+            if board_tensor.dim() == 2:
+                input_tensor = self._encode_board_for_player(board_tensor, current_player)
             else:
-                input_tensor = board_tensor.unsqueeze(0) if board_tensor.dim()==3 else board_tensor
+                input_tensor = board_tensor.unsqueeze(0) if board_tensor.dim() == 3 else board_tensor
 
             input_tensor = input_tensor.to(self.device)
 
-            policy_output, value_output = self.forward(input_tensor)
+            policy_logits, value_output = self.forward(input_tensor)
 
-            policy_probs = torch.softmax(policy_output, dim=1).cpu().numpy()[0]
+            policy_probs = torch.softmax(policy_logits, dim=1).cpu().numpy()[0]
             value = value_output.cpu().item()
 
             return policy_probs, value

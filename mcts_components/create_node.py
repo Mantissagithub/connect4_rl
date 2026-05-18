@@ -1,24 +1,26 @@
-from game_engine_components.get_valid_moves import get_valid_moves
+from game_engine_components.connect4_env import Connect4Env
 from .evaluate_board import evaluate_board_position
 
 def create_node(board, parent=None, action=None, current_player=1, neural_net=None):
-    # initial_value = get_initial_node_value(board, current_player, neural_net)
-    
-    policy_probs, initial_value = evaluate_board_position(board, current_player, neural_net)
+    env = Connect4Env.from_board(board, current_player=current_player)
+    _, initial_value = evaluate_board_position(env.board, current_player, neural_net)
+    winner = env.winner()
+    is_terminal = env.is_terminal()
 
     node = {
-        'state': board,
+        'state': env.board,
         'parent': parent,
         'action': action,
         'children': [],
         'visits': 0,
-        'value': initial_value,  
-        'total_value': 0,   
-        'prior': 0.1, #this gives the policy dist from the nn   
+        'value': initial_value,
+        'total_value': 0.0,
+        'prior': 0.0,
         'current_player': current_player,
-        'valid_moves': get_valid_moves(board),
-        'is_expanded': False,  
-        'is_terminal': False     
+        'valid_moves': env.legal_actions(),
+        'is_expanded': is_terminal,
+        'is_terminal': is_terminal,
+        'winner': winner,
     }
 
     return node

@@ -29,6 +29,14 @@ class ReplayBuffer:
     def get_all_examples(self) -> List[TrainExample]:
         return list(self.buffer)
 
+    def sample(self, batch_size: int) -> List[TrainExample]:
+        if len(self.buffer) <= batch_size:
+            return list(self.buffer)
+        return random.sample(list(self.buffer), batch_size)
+
+    def to_list(self) -> List[TrainExample]:
+        return list(self.buffer)
+
 def manage_replay_buffer(existing_data: List[TrainExample], 
                         new_data: List[TrainExample], 
                         max_size: int = 50000) -> List[TrainExample]:
@@ -59,6 +67,11 @@ def load_replay_buffer(file_path: str) -> List[TrainExample]:
     except Exception as e:
         print(f"Error loading replay buffer: {e}")
         return []
+
+def load_replay_buffer_object(file_path: str, max_size: int = 50000) -> ReplayBuffer:
+    buffer = ReplayBuffer(max_size=max_size)
+    buffer.add_examples(load_replay_buffer(file_path))
+    return buffer
 
 def update_buffer_with_new_games(buffer_file: str, 
                                 new_examples: List[TrainExample], 

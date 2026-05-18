@@ -1,13 +1,28 @@
-import torch
-import torch.optim as optim
+try:
+    import torch
+    import torch.optim as optim
+    from torch.optim.lr_scheduler import StepLR
+    TORCH_IMPORT_ERROR = None
+except ImportError as exc:
+    torch = None
+    optim = None
+    StepLR = None
+    TORCH_IMPORT_ERROR = exc
 import time
 import os
 import argparse
 from typing import Dict, Any
 import gc
-from torch.optim.lr_scheduler import StepLR
+
+def validate_runtime():
+    if TORCH_IMPORT_ERROR is not None:
+        raise RuntimeError(
+            "PyTorch could not be imported in this environment. "
+            f"Original error: {TORCH_IMPORT_ERROR}"
+        )
 
 def main():
+    validate_runtime()
     args = parse_arguments()
     print("="*60)
     print("CONNECT4 RL AGENT TRAINING")
@@ -80,7 +95,8 @@ def main():
                 num_simulations=current_params['num_simulations'],
                 batch_size=current_params['batch_size'],
                 num_epochs=args.num_epochs,
-                verbose=args.verbose
+                verbose=args.verbose,
+                replay_buffer_path="training_data.pkl",
             )
 
             print(f"Training iteration completed successfully")

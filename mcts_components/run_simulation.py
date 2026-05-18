@@ -1,30 +1,28 @@
-# here we are gonna do the whole simulation process
-
 from .select_child import select_child
 from .expand_node import expand_node
 from .backpropogate_value import backpropagate_value
 from .evaluate_board import evaluate_board_position
-from .create_node import create_root_node, create_node
+from .create_node import create_root_node
 
 def run_simulation(board, current_player=1, neural_net=None, num_simulations=100):
     root_node = create_root_node(board, current_player, neural_net)
     
     for _ in range(num_simulations):
-        #step1 -> selection
-        node = select_child(root_node)
-        
-        #step2-> expansion
-        if not node['is_terminal'] and not node['is_expanded']:
-            node = expand_node(node, neural_net)
-            # Select one of the new children for evaluation
-            if node['children']:
-                node = node['children'][0]
-        
-        #step3 -> evaluation
-        _, value = evaluate_board_position(node['state'], node['current_player'], neural_net)
-        
-        #step4 -> backpropagation
-        backpropagate_value(node, value)
+        node = root_node
+        path = [node]
+
+        while node['is_expanded'] and node['children'] and not node['is_terminal']:
+            node = select_child(node)
+            path.append(node)
+
+        if node['is_terminal']:
+            _, value = evaluate_board_position(node['state'], node['current_player'], neural_net)
+            backpropagate_value(path, value)
+            continue
+
+        policy_probs, value = evaluate_board_position(node['state'], node['current_player'], neural_net)
+        expand_node(node, neural_net=neural_net, policy_probs=policy_probs)
+        backpropagate_value(path, value)
     
     return root_node
 

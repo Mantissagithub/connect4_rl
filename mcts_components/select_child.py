@@ -1,33 +1,16 @@
 from .calculate_ucb import calculate_ucb
-
-# # the node structure is like this: node = {
-#         'state': board,
-#         'parent': parent,
-#         'action': action,
-#         'children': [],
-#         'visits': 0,
-#         'value': initial_value,  
-#         'total_value': 0,       
-#         'current_player': current_player,
-#         'valid_moves': get_valid_moves(board),
-#         'is_expanded': False,  
-#         'is_terminal': False     
-#     }
+import random
 
 def select_child(node):
     if not node['children']:
         return node
     
-    best_child = None
+    best_children = []
     best_ucb = float('-inf')
     
     for child in node['children']:
-        if child['visits'] > 0:
-            q_value = child['total_value'] / child['visits']
-        else:
-            q_value = child['value']  
+        q_value = 0.0 if child['visits'] == 0 else -(child['total_value'] / child['visits'])
 
-        # using thee AlphaGo UCB formula
         ucb_value = calculate_ucb(
             q=q_value,
             p=child['prior'],
@@ -38,6 +21,8 @@ def select_child(node):
         
         if ucb_value > best_ucb:
             best_ucb = ucb_value
-            best_child = child
+            best_children = [child]
+        elif ucb_value == best_ucb:
+            best_children.append(child)
     
-    return best_child if best_child is not None else node
+    return random.choice(best_children) if best_children else node
