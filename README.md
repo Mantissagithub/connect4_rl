@@ -160,12 +160,7 @@ The README previously referred to a "rating" or "score". In this project, that n
 
 The score is computed in `training_loop_components/evaluate_progress.py` as:
 
-$$
-\text{score} =
-30 \cdot (1 - \text{win\_rate\_balance})
-+ 40 \cdot \text{win\_rate\_vs\_random}
-+ 30 \cdot \text{avg\_win\_rate\_vs\_baselines}
-$$
+`score = 30 * (1 - win_rate_balance) + 40 * win_rate_vs_random + 30 * avg_win_rate_vs_baselines`
 
 with a hard cap at 100.
 
@@ -177,9 +172,7 @@ with a hard cap at 100.
 
 Because the default evaluation path in this repository usually compares against a random player and does not provide external baselines, the practical score is often dominated by:
 
-$$
-30 \cdot (1 - \text{win\_rate\_balance}) + 40 \cdot \text{win\_rate\_vs\_random}
-$$
+`30 * (1 - win_rate_balance) + 40 * win_rate_vs_random`
 
 So if you see a value such as **14.00**, that means the model earned **14 points on this custom 0-100 internal scale**, not "14 Elo" and not "14% win rate" by itself.
 
