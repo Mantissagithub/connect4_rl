@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Connect4 RL Network Architecture</title>
+  <style>
+    :root {
+      --bg: #f7f3eb;
+      --ink: #1b2430;
+      --muted: #5f6b7c;
+      --card: #fffdf9;
+      --line: #d9d0c2;
+      --blue: #275dad;
+      --green: #0d7c66;
+      --gold: #b77409;
+      --red: #a33a48;
+      --shadow: 0 18px 38px rgba(27, 36, 48, 0.10);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at top left, rgba(39, 93, 173, 0.10), transparent 25%),
+        radial-gradient(circle at center right, rgba(13, 124, 102, 0.10), transparent 25%),
+        var(--bg);
+      color: var(--ink);
+      font-family: Georgia, "Times New Roman", serif;
+    }
+
+    .canvas {
+      width: 1600px;
+      min-height: 980px;
+      padding: 44px;
+    }
+
+    .eyebrow {
+      font: 700 18px/1.2 "Trebuchet MS", sans-serif;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--blue);
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: 54px;
+      letter-spacing: -0.03em;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 23px;
+      line-height: 1.45;
+      max-width: 1120px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 320px 280px 1fr;
+      gap: 18px;
+      margin-top: 30px;
+      align-items: start;
+    }
+
+    .stack, .tower, .branch {
+      background: rgba(255,255,255,0.78);
+      border: 1px solid var(--line);
+      border-radius: 26px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+    }
+
+    .stack h2, .tower h2, .branch h2 {
+      margin: 0 0 14px;
+      font-size: 28px;
+    }
+
+    .block {
+      border-radius: 18px;
+      padding: 16px 16px 14px;
+      color: white;
+      margin-bottom: 14px;
+    }
+
+    .block:last-child { margin-bottom: 0; }
+    .blue { background: linear-gradient(135deg, #3777d4, #275dad); }
+    .green { background: linear-gradient(135deg, #16a085, #0d7c66); }
+    .gold { background: linear-gradient(135deg, #d68b16, #b77409); }
+    .red { background: linear-gradient(135deg, #cb5d70, #a33a48); }
+
+    .block .label {
+      font: 700 13px/1 "Trebuchet MS", sans-serif;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      opacity: 0.88;
+      margin-bottom: 8px;
+    }
+
+    .block .title {
+      font-size: 25px;
+      line-height: 1.08;
+      margin-bottom: 6px;
+    }
+
+    .block .meta {
+      font-size: 16px;
+      line-height: 1.35;
+      opacity: 0.95;
+    }
+
+    .tower {
+      text-align: center;
+      padding-top: 28px;
+    }
+
+    .merge {
+      padding: 20px;
+      border-radius: 22px;
+      border: 2px dashed #90a0bb;
+      color: var(--muted);
+      font: 700 20px/1.35 "Trebuchet MS", sans-serif;
+      margin-top: 148px;
+      background: rgba(255,255,255,0.78);
+    }
+
+    .branches {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .branch p {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.45;
+    }
+
+    .footer {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr 1fr;
+      gap: 18px;
+      margin-top: 24px;
+    }
+
+    .panel {
+      background: rgba(255,255,255,0.78);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 18px 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .panel h3 {
+      margin: 0 0 8px;
+      font-size: 24px;
+    }
+
+    .panel p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.45;
+    }
+
+    .mono {
+      font-family: "Courier New", monospace;
+      color: var(--ink);
+    }
+  </style>
+</head>
+<body>
+  <div class="canvas">
+    <div class="eyebrow">Connect4 Neural Network</div>
+    <h1>Dual-Head Convolutional Architecture</h1>
+    <div class="subtitle">
+      The model maps a 3-channel board tensor to both a move distribution over the 7 columns and a scalar value in [-1, 1].
+      The implementation uses a compact shared trunk followed by lightweight policy and value heads.
+    </div>
+
+    <div class="layout">
+      <section class="stack">
+        <h2>Input</h2>
+        <div class="block blue">
+          <div class="label">Board Tensor</div>
+          <div class="title">3 × 6 × 7</div>
+          <div class="meta">Channel 0: empty cells<br/>Channel 1: player 1 discs<br/>Channel 2: player 2 discs</div>
+        </div>
+      </section>
+
+      <section class="tower">
+        <h2>Shared Trunk</h2>
+        <div class="block green">
+          <div class="label">Conv Block 1</div>
+          <div class="title">3 → 32</div>
+          <div class="meta">3 × 3 conv, padding 1, ReLU</div>
+        </div>
+        <div class="block green">
+          <div class="label">Conv Block 2</div>
+          <div class="title">32 → 64</div>
+          <div class="meta">3 × 3 conv, padding 1, ReLU</div>
+        </div>
+        <div class="block green">
+          <div class="label">Conv Block 3</div>
+          <div class="title">64 → 128</div>
+          <div class="meta">3 × 3 conv, padding 1, ReLU</div>
+        </div>
+      </section>
+
+      <div class="branches">
+        <section class="branch">
+          <h2>Policy Head</h2>
+          <div class="block gold">
+            <div class="label">1 × 1 Reduction</div>
+            <div class="title">128 → 2</div>
+            <div class="meta">Preserves 6 × 7 spatial map</div>
+          </div>
+          <div class="block gold">
+            <div class="label">Flatten</div>
+            <div class="title">2 × 6 × 7 = 84</div>
+            <div class="meta">Concatenate reduced features</div>
+          </div>
+          <div class="block gold">
+            <div class="label">Linear + Softmax</div>
+            <div class="title">84 → 7</div>
+            <div class="meta">One probability per legal column</div>
+          </div>
+          <p>Outputs <span class="mono">π(a|s)</span>, the move distribution used by MCTS as a prior and by training as the policy prediction.</p>
+        </section>
+
+        <section class="branch">
+          <h2>Value Head</h2>
+          <div class="block red">
+            <div class="label">1 × 1 Reduction</div>
+            <div class="title">128 → 1</div>
+            <div class="meta">Preserves 6 × 7 spatial map</div>
+          </div>
+          <div class="block red">
+            <div class="label">Flatten + Hidden Layer</div>
+            <div class="title">42 → 64</div>
+            <div class="meta">Linear, ReLU</div>
+          </div>
+          <div class="block red">
+            <div class="label">Output</div>
+            <div class="title">64 → 1</div>
+            <div class="meta">Linear, tanh</div>
+          </div>
+          <p>Outputs <span class="mono">v(s)</span>, the estimated game outcome from the current state, bounded to [-1, 1].</p>
+        </section>
+      </div>
+    </div>
+
+    <div class="footer">
+      <section class="panel">
+        <h3>Parameter Count</h3>
+        <p><span class="mono">97,047</span> trainable parameters across the three shared convolutional layers and the two output heads.</p>
+      </section>
+      <section class="panel">
+        <h3>Policy Target</h3>
+        <p>The policy head is trained against the normalized MCTS visit distribution using KL divergence.</p>
+      </section>
+      <section class="panel">
+        <h3>Value Target</h3>
+        <p>The value head is trained against the final game result using mean squared error.</p>
+      </section>
+    </div>
+  </div>
+</body>
+</html>
