@@ -21,6 +21,10 @@ class TrainingTUI:
         self.hf_repo = "disabled"
         self.resume_mode = False
         self.args_snapshot = {}
+        self._min_render_interval = 0.12
+        self._last_render_time = 0.0
+        self._screen_initialized = False
+        self._last_frame = ""
 
     def configure(self, total_iterations, device, args_snapshot=None, hf_repo="disabled", resume_mode=False):
         self.total_iterations = total_iterations
@@ -29,7 +33,7 @@ class TrainingTUI:
         self.resume_mode = resume_mode
         self.args_snapshot = args_snapshot or {}
         self.log("Session initialized")
-        self.render()
+        self.render(force=True)
 
     def log(self, message):
         timestamp = time.strftime("%H:%M:%S")
@@ -59,9 +63,17 @@ class TrainingTUI:
     def finish(self, message):
         self.set_phase("completed", message)
         self.log(message)
+        self.render(force=True)
+        if self.enabled:
+            sys.stdout.write("\033[?25h")
+            sys.stdout.flush()
 
-    def render(self):
+    def render(self, force=False):
         if not self.enabled:
+            return
+
+        now = time.time()
+        if not force and now - self._last_render_time < self._min_render_interval:
             return
 
         width = max(88, min(shutil.get_terminal_size((120, 40)).columns, 140))
@@ -99,9 +111,21 @@ class TrainingTUI:
 
         lines.extend(self._panel("EVENTS", list(self.events) or ["No events yet"], width))
 
-        sys.stdout.write("\033[2J\033[H")
-        sys.stdout.write("\n".join(lines) + "\n")
+        frame = "\n".join(lines) + "\n"
+        if not force and frame == self._last_frame:
+            return
+
+        if not self._screen_initialized:
+            sys.stdout.write("\033[?25l\033[2J\033[H")
+            self._screen_initialized = True
+        else:
+            sys.stdout.write("\033[H")
+
+        sys.stdout.write(frame)
+        sys.stdout.write("\033[J")
         sys.stdout.flush()
+        self._last_frame = frame
+        self._last_render_time = now
 
     def _panel(self, title, body_lines, width):
         fg = "\033[38;5;255m"
