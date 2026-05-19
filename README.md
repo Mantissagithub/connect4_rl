@@ -14,7 +14,106 @@ The repository is organized around five subsystems:
 
 ## System Architecture
 
-![Training pipeline](assets/readme/training_pipeline.png)
+```mermaid
+%%{init: {'theme':'dark','themeVariables': {
+  'primaryColor': '#111827',
+  'primaryTextColor': '#f3f4f6',
+  'primaryBorderColor': '#6b7280',
+  'lineColor': '#9ca3af',
+  'secondaryColor': '#1f2937',
+  'tertiaryColor': '#0b1220',
+  'background': '#0b1220',
+  'mainBkg': '#111827',
+  'secondBkg': '#1f2937',
+  'tertiaryBkg': '#0b1220'
+}}}%%
+flowchart LR
+    subgraph UserFlow["Training Driver"]
+        CLI["main_training_loop.py"]
+        ITER["training_iteration()"]
+        EVAL["evaluate_progress()"]
+        CKPT["save_checkpoint()"]
+    end
+
+    subgraph SelfPlay["Self-Play Data Generation"]
+        SP["play_self_play_game()"]
+        MCTS["run_simulation()"]
+        ENV["Connect4Env"]
+        EX["TrainExample[]"]
+    end
+
+    subgraph Learning["Optimization"]
+        RB["Replay Buffer<br/>training_data.pkl"]
+        BATCH["batch_sampling()"]
+        NET["NeuralNetwork"]
+        LOSS["KL(policy) + MSE(value)"]
+    end
+
+    CLI --> ITER
+    ITER --> SP
+    SP --> MCTS
+    SP --> ENV
+    MCTS --> ENV
+    MCTS --> NET
+    SP --> EX
+    EX --> RB
+    RB --> BATCH
+    BATCH --> NET
+    NET --> LOSS
+    LOSS --> ITER
+    CLI --> EVAL
+    EVAL --> MCTS
+    CLI --> CKPT
+    CKPT --> NET
+```
+
+### End-to-End Training Sequence
+
+```mermaid
+%%{init: {'theme':'dark','themeVariables': {
+  'primaryColor': '#111827',
+  'primaryTextColor': '#f3f4f6',
+  'primaryBorderColor': '#6b7280',
+  'lineColor': '#9ca3af',
+  'secondaryColor': '#1f2937',
+  'tertiaryColor': '#0b1220',
+  'background': '#0b1220',
+  'mainBkg': '#111827',
+  'secondBkg': '#1f2937',
+  'tertiaryBkg': '#0b1220'
+}}}%%
+sequenceDiagram
+    participant CLI as main_training_loop.py
+    participant Iter as training_iteration()
+    participant SP as play_self_play_game()
+    participant MCTS as run_simulation()
+    participant Env as Connect4Env
+    participant RB as Replay Buffer
+    participant Net as NeuralNetwork
+    participant Eval as evaluate_progress()
+    participant Ckpt as save_checkpoint()
+
+    CLI->>Iter: start iteration
+    loop self-play games
+        Iter->>SP: generate game
+        loop per move
+            SP->>MCTS: search position
+            MCTS->>Env: legal actions / next states
+            MCTS->>Net: policy + value estimate
+            MCTS-->>SP: root visit distribution
+            SP->>Env: step(selected action)
+        end
+        SP-->>Iter: TrainExample[]
+        Iter->>RB: append examples
+    end
+
+    Iter->>RB: sample batches
+    Iter->>Net: train for N epochs
+    Net-->>Iter: policy loss + value loss
+    CLI->>Eval: periodic benchmark
+    Eval->>Net: self-play + random-opponent evaluation
+    CLI->>Ckpt: periodic checkpoint save
+```
 
 ### Self-Play Loop
 
@@ -34,17 +133,43 @@ This matches the implementation in `training_data_components/assign_game_outcome
 
 ## Neural Network
 
-![Network architecture](assets/readme/network_architecture.png)
-
 The model in `neural_network_components/neural_network.py` contains a shared convolutional trunk followed by separate policy and value heads.
+
+```mermaid
+%%{init: {'theme':'dark','themeVariables': {
+  'primaryColor': '#111827',
+  'primaryTextColor': '#f3f4f6',
+  'primaryBorderColor': '#6b7280',
+  'lineColor': '#9ca3af',
+  'secondaryColor': '#1f2937',
+  'tertiaryColor': '#0b1220',
+  'background': '#0b1220',
+  'mainBkg': '#111827',
+  'secondBkg': '#1f2937',
+  'tertiaryBkg': '#0b1220'
+}}}%%
+flowchart TD
+    IN["Input State<br/>3 x 6 x 7"] --> C1["Conv 3→32<br/>3x3 + ReLU"]
+    C1 --> C2["Conv 32→64<br/>3x3 + ReLU"]
+    C2 --> C3["Conv 64→128<br/>3x3 + ReLU"]
+    C3 --> P1["Policy Head<br/>1x1 Conv 128→2"]
+    C3 --> V1["Value Head<br/>1x1 Conv 128→1"]
+
+    P1 --> P2["Flatten<br/>2 x 6 x 7 = 84"]
+    P2 --> P3["Linear 84→7<br/>policy logits"]
+
+    V1 --> V2["Flatten<br/>1 x 6 x 7 = 42"]
+    V2 --> V3["Linear 42→64 + ReLU"]
+    V3 --> V4["Linear 64→1 + tanh"]
+```
 
 ### Input Encoding
 
 Each board is represented as a 3-channel tensor of shape \(3 \times 6 \times 7\):
 
-- Channel 0: empty cells
-- Channel 1: player 1 discs
-- Channel 2: player 2 discs
+- Channel 0: current player discs
+- Channel 1: opponent discs
+- Channel 2: empty cells
 
 This encoding is produced in `game_engine_components/get_state_tensor.py`.
 
@@ -74,10 +199,9 @@ $$
 \text{Conv}_{1 \times 1}(128 \rightarrow 2)
 \rightarrow \text{Flatten}(2 \times 6 \times 7 = 84)
 \rightarrow \text{Linear}(84 \rightarrow 7)
-\rightarrow \text{Softmax}
 $$
 
-It outputs a distribution over the 7 legal columns:
+It outputs logits over the 7 columns. During inference, those logits are converted to probabilities with softmax and then masked to legal actions before action selection or MCTS prior use:
 
 $$
 \pi_\theta(a \mid s) \in \mathbb{R}^7
@@ -110,6 +234,35 @@ The current architecture has **97,047 trainable parameters**.
 
 ## MCTS
 
+```mermaid
+%%{init: {'theme':'dark','themeVariables': {
+  'primaryColor': '#111827',
+  'primaryTextColor': '#f3f4f6',
+  'primaryBorderColor': '#6b7280',
+  'lineColor': '#9ca3af',
+  'secondaryColor': '#1f2937',
+  'tertiaryColor': '#0b1220',
+  'background': '#0b1220',
+  'mainBkg': '#111827',
+  'secondBkg': '#1f2937',
+  'tertiaryBkg': '#0b1220'
+}}}%%
+sequenceDiagram
+    participant Root as Root Node
+    participant Select as select_child()
+    participant Expand as expand_node()
+    participant Eval as evaluate_board_position()
+    participant Back as backpropagate_value()
+
+    Root->>Select: traverse by UCB
+    Select-->>Root: leaf node
+    Root->>Expand: expand legal children
+    Expand->>Eval: policy prior + scalar value
+    Eval-->>Expand: masked priors, leaf value
+    Expand->>Back: propagate value up path
+    Back-->>Root: update visits and total_value
+```
+
 During search, child selection uses the prior-guided UCB rule implemented in `mcts_components/calculate_ucb.py`:
 
 $$
@@ -131,7 +284,34 @@ The simulation loop in `mcts_components/run_simulation.py` follows the standard 
 3. Neural network evaluation
 4. Value backpropagation
 
+The value is propagated with alternating sign at each parent step so each node stores return from the perspective of the player to move at that node.
+
 ## Training Objective
+
+```mermaid
+%%{init: {'theme':'dark','themeVariables': {
+  'primaryColor': '#111827',
+  'primaryTextColor': '#f3f4f6',
+  'primaryBorderColor': '#6b7280',
+  'lineColor': '#9ca3af',
+  'secondaryColor': '#1f2937',
+  'tertiaryColor': '#0b1220',
+  'background': '#0b1220',
+  'mainBkg': '#111827',
+  'secondBkg': '#1f2937',
+  'tertiaryBkg': '#0b1220'
+}}}%%
+flowchart LR
+    S["Encoded state batch"] --> N["NeuralNetwork"]
+    N --> P["Predicted policy logits"]
+    N --> V["Predicted value"]
+    T1["MCTS visit targets"] --> KL["KL divergence"]
+    P --> KL
+    T2["Final game outcomes"] --> MSE["Mean squared error"]
+    V --> MSE
+    KL --> L["Total loss"]
+    MSE --> L
+```
 
 The loss in `neural_network_components/calculate_loss.py` combines policy matching and value regression:
 
@@ -160,40 +340,48 @@ The README previously referred to a "rating" or "score". In this project, that n
 
 The score is computed in `training_loop_components/evaluate_progress.py` as:
 
-`score = 30 * (1 - win_rate_balance) + 40 * win_rate_vs_random + 30 * avg_win_rate_vs_baselines`
-
-with a hard cap at 100.
+`score = 100 * win_rate_vs_random + 20 * (1 - win_rate_balance)`
 
 ### Interpretation
 
 - `win_rate_balance` measures how asymmetric self-play outcomes are between player 1 and player 2.
 - `win_rate_vs_random` measures how often the agent beats a random opponent.
-- `avg_win_rate_vs_baselines` is only used if stronger baseline models are supplied.
 
-Because the default evaluation path in this repository usually compares against a random player and does not provide external baselines, the practical score is often dominated by:
+Because `win_rate_vs_random` is in `[0, 1]` and `win_rate_balance` is in `[0, 1]`, the current score range is:
 
-`30 * (1 - win_rate_balance) + 40 * win_rate_vs_random`
+- minimum: `0`
+- maximum: `120`
 
-So if you see a value such as **14.00**, that means the model earned **14 points on this custom 0-100 internal scale**, not "14 Elo" and not "14% win rate" by itself.
+So if you see a value such as **107.00**, that means the model earned **107 points on this custom 0-120 internal scale**, not "107 Elo" and not "107% win rate".
 
 ## Available Artifacts
 
 The repository currently includes checkpoint artifacts in `checkpoints/`, including saved models through iteration 500. The architecture documented above matches the checkpoint metadata path used by `training_loop_components/save_checkpoint.py`.
 
-## Latest Checkpoint Snapshot
+## Recent Benchmark Sweep
 
-The latest screencast has been copied into this repo at `assets/screencasts/checkpoint_0500_latest_screencast_2026-05-18.webm`. It is based on the last checkpoint: `checkpoints/checkpoint_iter_0500_20250712_162910.pt`.
+On `2026-05-19`, the latest training run checkpoints were benchmarked with `scripts/benchmark_checkpoint.py` using:
 
-On `2026-05-18`, that checkpoint was benchmarked with `scripts/benchmark_checkpoint.py` and the result was saved to `benchmarks/checkpoint_iter_0500_20250712_162910.json`.
+- `12` self-play evaluation games
+- `12` games versus a random opponent
+- `24` MCTS simulations per move during evaluation
 
-- internal score: **2.0 / 100**
-- self-play sample: `20` games at `24` MCTS simulations per move
-- self-play outcomes: `20` player-1 wins, `0` player-2 wins, `0` draws
-- vs random: `1` win, `19` losses, `0` draws
+The resulting benchmark files are stored in `benchmarks/`.
 
-This is still **not Elo**. It is the repository's current internal benchmark for the last checkpoint, and the score is bad right now. The agent is still a lil bit dumb in its current form.
+| Checkpoint | Score | Vs Random | Self-Play Outcomes |
+| --- | ---: | --- | --- |
+| `checkpoint_iter_0060_20260519_061216.pt` | `105.00 / 120` | `11W-1L-0D` | `7 P1 wins, 3 P2 wins, 2 draws` |
+| `checkpoint_iter_0080_20260519_062544.pt` | `86.67 / 120` | `10W-2L-0D` | `11 P1 wins, 1 P2 win, 0 draws` |
+| `checkpoint_iter_0100_20260519_063927.pt` | `113.33 / 120` | `12W-0L-0D` | `8 P1 wins, 4 P2 wins, 0 draws` |
+| `checkpoint_iter_0120_20260519_065315.pt` | `106.67 / 120` | `12W-0L-0D` | `10 P1 wins, 2 P2 wins, 0 draws` |
+| `checkpoint_iter_0120_20260519_065326.pt` | `106.67 / 120` | `12W-0L-0D` | `10 P1 wins, 2 P2 wins, 0 draws` |
 
-I have dwelved deeper into these models since this checkpoint, and I am going to improve the model and update this repository soon.
+The current best benchmarked checkpoint in this repo is:
+
+- `checkpoints/checkpoint_iter_0100_20260519_063927.pt`
+- internal score: **113.33 / 120**
+- vs random: `12` wins, `0` losses, `0` draws
+- self-play balance term: `win_rate_balance = 0.3333`
 
 ## Self-Play GUI
 
@@ -212,7 +400,7 @@ The GUI:
 - shows root visit counts for each column
 - logs move-by-move search summaries
 
-If no checkpoint is passed, it attempts to load the newest file in `checkpoints/`.
+If no checkpoint is passed, it first tries to load the highest benchmarked checkpoint from `benchmarks/`. If no benchmark JSON is available, it falls back to the newest file in `checkpoints/`.
 
 ## References
 

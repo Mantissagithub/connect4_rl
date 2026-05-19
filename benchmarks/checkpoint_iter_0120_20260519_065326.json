@@ -1,0 +1,31 @@
+{
+  "checkpoint": "checkpoints/checkpoint_iter_0120_20260519_065326.pt",
+  "benchmark_date": "2026-05-19",
+  "seed": 7,
+  "evaluation_games_per_stage": 12,
+  "self_play_simulations": 24,
+  "overall_rating": 106.66666666666667,
+  "self_play": {
+    "games_played": 12,
+    "avg_game_length": 20.333333333333332,
+    "total_moves": 244,
+    "outcomes": {
+      "player1_wins": 10,
+      "player2_wins": 2,
+      "draws": 0
+    },
+    "win_rate_balance": 0.6666666666666666
+  },
+  "vs_random": {
+    "games_played": 12,
+    "wins": 12,
+    "losses": 0,
+    "draws": 0,
+    "win_rate": 1.0,
+    "avg_moves_per_game": 11.083333333333334
+  },
+  "notes": [
+    "This repository uses a custom internal score, not a true Elo ladder.",
+    "Higher score means better balance in self-play and stronger results versus a random opponent."
+  ]
+}

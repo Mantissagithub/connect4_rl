@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import site
 import sys
@@ -25,6 +26,11 @@ BORDER_COLOR = "#24324a"
 TEXT_COLOR = "#e5edf7"
 MUTED_TEXT_COLOR = "#9fb0c8"
 ACCENT_COLOR = "#68a3ff"
+SEARCH_PRESETS = {
+    "Fast": {"simulations": 25, "delay_ms": 350, "description": "Quick, noisier play"},
+    "Balanced": {"simulations": 75, "delay_ms": 700, "description": "Default mix of speed and quality"},
+    "Max": {"simulations": 500, "delay_ms": 1800, "description": "Maximum search strength with the slowest autoplay pace"},
+}
 
 
 def _bootstrap_torch_runtime():
@@ -59,9 +65,11 @@ class SelfPlayViewer:
         self.root.title("Connect4 RL Self-Play Viewer")
         self.root.configure(bg=BG_COLOR)
 
-        self.checkpoint_path = checkpoint_path or self._get_latest_checkpoint()
+        self.selected_benchmark = None
+        self.checkpoint_path = checkpoint_path or self._get_default_checkpoint()
         self.simulations_var = tk.IntVar(value=simulations)
         self.delay_var = tk.IntVar(value=delay_ms)
+        self.preset_var = tk.StringVar(value="Balanced")
         self.status_var = tk.StringVar(value="Loading model...")
         self.value_var = tk.StringVar(value="Value estimate: -")
         self.turn_var = tk.StringVar(value="Current player: 1")
@@ -239,11 +247,25 @@ class SelfPlayViewer:
             highlightcolor=ACCENT_COLOR,
         ).grid(row=1, column=3, sticky="w", padx=(8, 0), pady=(10, 0))
 
-        ttk.Button(controls, text="New Game", command=self.new_game, style="Dark.TButton").grid(row=2, column=0, sticky="ew", pady=(14, 0))
-        ttk.Button(controls, text="Step", command=self.step_once, style="Dark.TButton").grid(row=2, column=1, sticky="ew", padx=(8, 0), pady=(14, 0))
+        tk.Label(controls, text="Search preset", bg=PANEL_COLOR, fg=MUTED_TEXT_COLOR).grid(row=2, column=0, sticky="w", pady=(12, 0))
+        preset_box = ttk.Combobox(
+            controls,
+            textvariable=self.preset_var,
+            values=list(SEARCH_PRESETS.keys()),
+            state="readonly",
+            width=14,
+        )
+        preset_box.grid(row=2, column=1, sticky="w", padx=(8, 0), pady=(12, 0))
+        preset_box.bind("<<ComboboxSelected>>", lambda _event: self.apply_selected_preset())
+        ttk.Button(controls, text="Apply Preset", command=self.apply_selected_preset, style="Dark.TButton").grid(
+            row=2, column=2, sticky="ew", padx=(8, 0), pady=(12, 0)
+        )
+
+        ttk.Button(controls, text="New Game", command=self.new_game, style="Dark.TButton").grid(row=3, column=0, sticky="ew", pady=(14, 0))
+        ttk.Button(controls, text="Step", command=self.step_once, style="Dark.TButton").grid(row=3, column=1, sticky="ew", padx=(8, 0), pady=(14, 0))
         self.auto_button = ttk.Button(controls, text="Start Auto", command=self.toggle_autoplay, style="Dark.TButton")
-        self.auto_button.grid(row=2, column=2, sticky="ew", padx=(8, 0), pady=(14, 0))
-        ttk.Button(controls, text="Reset Board", command=self.reset_game, style="Dark.TButton").grid(row=2, column=3, sticky="ew", padx=(8, 0), pady=(14, 0))
+        self.auto_button.grid(row=3, column=2, sticky="ew", padx=(8, 0), pady=(14, 0))
+        ttk.Button(controls, text="Reset Board", command=self.reset_game, style="Dark.TButton").grid(row=3, column=3, sticky="ew", padx=(8, 0), pady=(14, 0))
 
         status = tk.LabelFrame(
             right,
@@ -307,6 +329,42 @@ class SelfPlayViewer:
             highlightcolor=ACCENT_COLOR,
         )
         self.history_box.pack(fill="both", expand=True)
+        self._sync_preset_from_values()
+
+    def _get_benchmark_results(self):
+        benchmark_dir = Path("benchmarks")
+        if not benchmark_dir.exists():
+            return []
+
+        results = []
+        for path in benchmark_dir.glob("checkpoint_*.json"):
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+                checkpoint = payload.get("checkpoint", "")
+                score = payload.get("overall_rating")
+                if checkpoint and isinstance(score, (int, float)):
+                    results.append(
+                        {
+                            "path": path,
+                            "checkpoint": checkpoint,
+                            "score": float(score),
+                            "date": payload.get("benchmark_date", ""),
+                        }
+                    )
+            except Exception:
+                continue
+
+        return results
+
+    def _get_best_benchmarked_checkpoint(self):
+        results = self._get_benchmark_results()
+        if not results:
+            self.selected_benchmark = None
+            return ""
+
+        best = max(results, key=lambda item: (item["score"], item["date"], item["checkpoint"]))
+        self.selected_benchmark = best
+        return best["checkpoint"]
 
     def _get_latest_checkpoint(self):
         checkpoint_dir = Path("checkpoints")
@@ -314,6 +372,12 @@ class SelfPlayViewer:
             return ""
         files = sorted(checkpoint_dir.glob("checkpoint_*.pt"), key=lambda path: path.stat().st_mtime, reverse=True)
         return str(files[0]) if files else ""
+
+    def _get_default_checkpoint(self):
+        best_checkpoint = self._get_best_benchmarked_checkpoint()
+        if best_checkpoint:
+            return best_checkpoint
+        return self._get_latest_checkpoint()
 
     def _load_model(self):
         checkpoint = self.checkpoint_entry.get().strip() if hasattr(self, "checkpoint_entry") else self.checkpoint_path
@@ -327,7 +391,12 @@ class SelfPlayViewer:
                     self.root.after(0, lambda: self.status_var.set("Model load failed"))
                     return
                 self.model = model
-                self.root.after(0, lambda: self.status_var.set(f"Model ready: {checkpoint}"))
+                if self.selected_benchmark and self.selected_benchmark.get("checkpoint") == checkpoint:
+                    score = self.selected_benchmark["score"]
+                    self.root.after(0, lambda: self.status_var.set(f"Model ready: {checkpoint} | benchmark score {score:.2f}/120"))
+                    self.root.after(0, lambda: self.banner_var.set(f"Using best benchmarked checkpoint | score {score:.2f}/120"))
+                else:
+                    self.root.after(0, lambda: self.status_var.set(f"Model ready: {checkpoint}"))
             except Exception as exc:
                 self.root.after(0, lambda: self.status_var.set(f"Model load failed: {exc}"))
 
@@ -335,6 +404,26 @@ class SelfPlayViewer:
 
     def reload_model(self):
         self._load_model()
+
+    def _sync_preset_from_values(self):
+        for name, config in SEARCH_PRESETS.items():
+            if self.simulations_var.get() == config["simulations"] and self.delay_var.get() == config["delay_ms"]:
+                self.preset_var.set(name)
+                return
+        self.preset_var.set("Balanced")
+
+    def apply_selected_preset(self):
+        preset_name = self.preset_var.get()
+        config = SEARCH_PRESETS.get(preset_name)
+        if not config:
+            return
+
+        self.simulations_var.set(config["simulations"])
+        self.delay_var.set(config["delay_ms"])
+        self.status_var.set(
+            f"Preset applied: {preset_name} | {config['simulations']} sims | {config['delay_ms']} ms delay"
+        )
+        self._set_banner(f"{preset_name} preset active: {config['description']}", TEXT_COLOR)
 
     def reset_game(self):
         self.board = self.initialize_board()
