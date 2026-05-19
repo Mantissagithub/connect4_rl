@@ -2,6 +2,14 @@
 
 A compact AlphaZero-style Connect 4 project built around self-play, Monte Carlo Tree Search (MCTS), and a dual-head convolutional neural network. The codebase trains a policy-value model from games it generates against itself, then evaluates progress with a lightweight project-specific score.
 
+## Self-Play Screencast
+
+Latest self-play recording:
+
+- [Self-Play Screencast (.webm)](assets/screencasts/checkpoint_0500_latest_screencast_2026-05-18.webm)
+
+[![Model on Hugging Face](https://img.shields.io/badge/Model%20on-%F0%9F%A4%97-Hugging%20Face?style=for-the-badge&labelColor=f8f8f8&color=e5e7eb&logo=huggingface&logoColor=111827)](https://huggingface.co/Pradheep1647/connect4_rl_self_play/tree/main/checkpoints)
+
 ## Overview
 
 The repository is organized around five subsystems:
