@@ -12,6 +12,8 @@ Latest self-play recording:
 
 ## Overview
 
+- [Training Math Reference](TRAINING_MATH.md)
+
 The repository is organized around five subsystems:
 
 1. `game_engine_components/` implements board state management, move application, terminal detection, and tensor conversion.
